@@ -1,79 +1,62 @@
-from pydantic import BaseModel,EmailStr
+from pydantic import BaseModel,Field
+from typing import Optional,List
 from bson import ObjectId
+from datetime import datetime
  
-   
-class UserBase(BaseModel):
-    username: str
-    email: EmailStr
- 
-class UserCreate(UserBase):
-    pass
- 
-class User(UserBase):
-    id: str
+class AuthorSchema(BaseModel):
+    user_id: str
+    bio: Optional[str] = None
  
     class Config:
+        arbitrary_types_allowed = True
         orm_mode = True
  
-class UserResponseSchema(BaseModel):
-    id: str
+class AuthorUpdateSchema(BaseModel):
+    bio: Optional[str] = None
+ 
+    class Config:
+        arbitrary_types_allowed = True
+        orm_mode = True
+ 
+class UserSchema(BaseModel):
+    id: Optional[str] = None
+ 
+class UserResponse(BaseModel):
+    id: str = Field(alias="_id")
+    username: str
     email: str
-    username: str
-    class Config:
-        orm_mode = True
-        json_encoders = {
-            ObjectId: str
-        }
+class AuthorResponse(BaseModel):
+    user: UserSchema
+    bio: Optional[str] = None
+    id: Optional[str] = None
  
+class CommentCreate(BaseModel):
+    content: str
+    author_id: str
  
-class AuthorBase(BaseModel):
-    user_id: str
-    bio: str
+class CommentUpdate(BaseModel):
+    content: Optional[str] = None
  
- 
-class AuthorCreate(AuthorBase):
-    pass
- 
-    class Config:
-        orm_mode = True
-        json_encoders = {
-            ObjectId: str
-        }
-       
-class Author(BaseModel):
+class CommentResponse(BaseModel):
     id: str
-    user_id: str
-    bio: str
+    content: str
+    author: str
+    created_at: datetime
  
-    class Config:
-        orm_mode = True
-        json_encoders = {
-            ObjectId: str
-        }
- 
-class PostBase(BaseModel):
+class PostCreate(BaseModel):
     title: str
     content: str
     author_id: str
  
-class PostCreate(PostBase):
-    pass
- 
-class Post(BaseModel):
-    title: str
-    content: str
-    author: str
-    _id: str
- 
-    class Config:
-        orm_mode = True    
- 
+class PostUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
  
 class PostResponse(BaseModel):
+    id: str
     title: str
     content: str
-    author: str
-    _id: str
- 
-    class Config:
-        orm_mode = True
+    comments: List[CommentResponse] = []
+    created_at: datetime
+    updated_at: datetime
+   

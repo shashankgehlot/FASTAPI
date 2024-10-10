@@ -1,11 +1,16 @@
 from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm
+
 from pydantic import BaseModel
 from typing import Optional
 from authenticator.models import User
 from authenticator.schemas import UserCreate, UserLogin, Token
-from authenticator.utils import get_password_hash, verify_password, create_access_token
+from authenticator.schemas import User as UserSchema
+
+from authenticator.utils import get_password_hash, verify_password, create_access_token,get_current_user
 
 router = APIRouter()
+
 
 @router.post("/register", response_model=Token)
 async def register(user: UserCreate):
@@ -22,15 +27,14 @@ async def register(user: UserCreate):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/login", response_model=Token)
-async def login(user: UserLogin):
-    user_doc = User.objects(username=user.username).first()
-    if user_doc is None or not verify_password(user.password, user_doc.password):
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user_doc = User.objects(username=form_data.username).first()
+    if user_doc is None or not verify_password(form_data.password, user_doc.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": form_data.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.post("/logout")
-async def logout():
-    # In this simple example, we're not handling token invalidation
-    return {"msg": "Logged out successfully"}
+@router.get("/users/me",response_model=UserSchema)
+async def read_users_me(current_user:UserSchema = Depends(get_current_user)):
+    return current_user

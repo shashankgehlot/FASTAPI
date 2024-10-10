@@ -24,7 +24,7 @@ def create_post(post: PostCreate):
     db_author = get_author(post.author_id)
     if not db_author:
         return None
-    db_post = Post(title=post.title, content=post.content, author=db_author)
+    db_post = Post(title=post.title, content=post.content, author_id=db_author)
     db_post.save()
     return db_post
  
@@ -35,12 +35,4 @@ def get_post(post_id: str):
  
 def get_posts(skip: int = 0, limit: int = 10):
     posts = Post.objects()
-    return [
-        PostResponse(
-            title=post.title,
-            content=post.content,
-            author=str(post.author.id),
-            _id=str(post.id)
-        ) for post in posts
-    ]
-   
+    return posts

@@ -13,3 +13,13 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+
+class User(BaseModel):
+    username: str
+    email: str
+    is_author: bool
+    is_admin: bool
+    is_user: bool
