@@ -61,9 +61,7 @@ services:
 
   flower:
     image: mher/flower:0.9.7
-    container_name: flower 
-    ports:
-      - "5556:5555"        # Flower UI port
+    container_name: flower
     environment:
       - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672  # RabbitMQ connection
     depends_on:
