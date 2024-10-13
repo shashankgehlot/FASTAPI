@@ -1,8 +1,8 @@
 import os
 from celery import Celery
 import asyncio
-
-
+from dotenv import load_dotenv
+load_dotenv()
 BROKER_TRANSPORT = 'amqp'
 BROKER_USERNAME = os.getenv("RABBITMQ_DEFAULT_USER")
 BROKER_PASSWORD = os.getenv("RABBITMQ_DEFAULT_PASS")

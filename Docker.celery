@@ -1,0 +1,20 @@
+FROM python:3.9
+
+# Set the working directory
+WORKDIR /app
+
+# Install virtualenv
+RUN pip install virtualenv
+
+# Create a virtual environment
+RUN virtualenv venv
+
+# Activate the virtual environment and install requirements
+COPY requirements.txt .
+RUN . venv/bin/activate && pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code
+COPY . .
+
+# Set the command to run the Celery worker
+CMD ["venv/bin/celery", "-A", "celery_app", "worker", "--loglevel=info"]
