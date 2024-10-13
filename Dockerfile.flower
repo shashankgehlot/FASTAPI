@@ -1,0 +1,20 @@
+FROM python:3.9
+
+# Set the working directory
+WORKDIR /app
+
+# Install virtualenv
+RUN pip install virtualenv
+
+# Create a virtual environment
+RUN virtualenv venv
+
+# Copy requirements file and install dependencies in the virtual environment
+COPY requirements.txt .
+RUN . venv/bin/activate && pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code
+COPY . .
+
+# Set the command to run Flower
+CMD ["/bin/bash", "-c", ". venv/bin/activate && celery -A celery_app.celery_app flower --port=5555"]
