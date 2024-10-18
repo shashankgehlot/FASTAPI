@@ -13,18 +13,20 @@ router = APIRouter()
  
 @router.post("/posts/", response_model=PostResponse)
 def create_post(post: PostCreate, current_user: UserSchema = Depends(get_current_user)):
+    if not current_user.is_author:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to create a post")
     author = Author.objects(id=post.author_id).first()
     if not author:
-        raise HTTPException(status_code=404, detail="Author not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Author not found")
     new_post = Post(title=post.title, content=post.content, author=author)
     new_post.save()
     return PostResponse(
         id=str(new_post.id),
         title=new_post.title,
         content=new_post.content,
-        comments=[],
         created_at=new_post.created_at,
-        updated_at=new_post.updated_at
+        updated_at=new_post.updated_at,
+        slug_title =new_post.slug_title
     )
  
 @router.post("/posts/{post_id}/comments/", response_model=CommentResponse)
@@ -45,7 +47,7 @@ def add_comment(post_id: str, comment: CommentCreate, current_user: UserSchema =
         created_at=new_comment.created_at
     )
  
-@router.get("/posts/{post_id}", response_model=PostResponse)
+@router.get("/posts/id/{post_id}", response_model=PostResponse)
 def get_post(post_id: str):
     post = Post.objects(id=post_id).first()
     if not post:
@@ -64,9 +66,33 @@ def get_post(post_id: str):
         content=post.content,
         comments=comments,
         created_at=post.created_at,
-        updated_at=post.updated_at
+        updated_at=post.updated_at,
+        slug_title=post.slug_title,
     )
  
+@router.get("/posts/slug/{slug_title}", response_model=PostResponse)
+def get_post_by_slug(slug_title: str):
+    post = Post.objects(slug_title=slug_title).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    comments = [
+        CommentResponse(
+            id=str(comment.id),
+            content=comment.content,
+            author=comment.author.username,
+            created_at=comment.created_at
+        ) for comment in post.comments
+    ]
+    return PostResponse(
+        id=str(post.id),
+        title=post.title,
+        content=post.content,
+        comments=comments,
+        created_at=post.created_at,
+        updated_at=post.updated_at,
+        slug_title=post.slug_title,
+    )
+
 @router.get("/posts/", response_model=List[PostResponse])
 def get_all_posts():
     posts = Post.objects()
@@ -87,7 +113,8 @@ def get_all_posts():
                 content=post.content,
                 comments=comments,
                 created_at=post.created_at,
-                updated_at=post.updated_at
+                updated_at=post.updated_at,
+                slug_title=post.slug_title
             )
         )
     return response
@@ -127,7 +154,8 @@ def update_post(post_update: PostUpdate, post: Post = Depends(can_update_or_dele
         content=post.content,
         comments=comments,
         created_at=post.created_at,
-        updated_at=post.updated_at
+        updated_at=post.updated_at,
+        slug_title=post.slug_title
     )
  
 def can_modify_comment(post_id: str, comment_id: str, current_user: User = Depends(get_current_user)):

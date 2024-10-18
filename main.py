@@ -19,11 +19,11 @@ load_dotenv()
 USERNAME = "admin"
 PASSWORD = "secret"
 security = HTTPBasic()
-app = FastAPI()
+app = FastAPI(root_path='/api')
 # Connect to MongoDB
 username=os.getenv("MONGO_INITDB_ROOT_USERNAME")
 password=os.getenv('MONGO_INITDB_ROOT_PASSWORD')
-url="mongodb://{username}:{password}@88.222.213.152:27017/TESTDATA?authSource=admin"
+url = f"mongodb://{username}:{password}@mongo:27017/TESTDATA?authSource=admin"
 print(url)
 connect(host=url)
  

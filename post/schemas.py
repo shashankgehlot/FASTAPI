@@ -59,4 +59,5 @@ class PostResponse(BaseModel):
     comments: List[CommentResponse] = []
     created_at: datetime
     updated_at: datetime
+    slug_title: str
    
