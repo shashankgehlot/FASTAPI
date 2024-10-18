@@ -64,6 +64,7 @@ services:
     container_name: flower
     environment:
       - CELERY_BROKER_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672  # RabbitMQ connection
+      - FLOWER_URL_PREFIX=/flower
     depends_on:
       - rabbitmq           # Ensure RabbitMQ starts first
     networks:
@@ -73,10 +74,10 @@ services:
     image: nginx:latest
     container_name: nginx
     ports:
-      - "5555:5555"   # Expose Nginx on port 80
+      - "80:80"   # Expose Nginx on port 80
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./.htpasswd:/etc/nginx/.htpasswd 
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./index.html:/usr/share/nginx/html/index.html
     depends_on:
       - fastapi
       - flower
