@@ -51,6 +51,23 @@ def read_author(author_id: str, current_user: UserSchema = Depends(get_current_u
         "bio": author_data["bio"],
         "id": author_data["_id"]["$oid"]
     }
+
+
+@router.get("/user/{user_id}", response_model=AuthorResponse)
+def read_author_by_userid(user_id: str, current_user: UserSchema = Depends(get_current_user)):
+    author = Author.objects.get(user=ObjectId(user_id))
+    author_data = json.loads(author.to_json())
+    user_data = User.objects.get(id=ObjectId(author_data["user"]["$oid"]))
+    user_data = json.loads(user_data.to_json())
+    return {
+        "user": {
+            "id": user_data["_id"]["$oid"],
+            "username": user_data["username"],
+            "email": user_data["email"]
+        },
+        "bio": author_data["bio"],
+        "id": author_data["_id"]["$oid"]
+    }
  
 @router.put("/{author_id}", response_model=AuthorResponse)
 def update_author(author_id: str, author: AuthorUpdateSchema, current_user: UserSchema = Depends(is_admin_user)):

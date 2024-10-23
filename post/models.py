@@ -20,7 +20,7 @@ class Comment(EmbeddedDocument):
     created_at = DateTimeField(default=datetime.utcnow)
 
 class Post(Document):
-    title = StringField(required=True)
+    title = StringField(required=True,unique=True)
     content = StringField(required=True)
     author = ReferenceField(Author, required=True)
     comments = ListField(EmbeddedDocumentField(Comment), default=list)
