@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException,Depends,status
-from mongoengine import DoesNotExist
-from post.models import Post, Author,Comment
+from mongoengine import DoesNotExist,NotUniqueError
+from post.models import Post, Author,Comment,Tags
 from authenticator.models import User
 from authenticator.schemas import User as UserSchema
 from authenticator.utils import get_current_user,check_current_user_is_admin,is_admin,is_post_author
-from post.schemas import CommentCreate, CommentUpdate, CommentResponse, PostCreate, PostUpdate, PostResponse
+from post.schemas import CommentCreate, CommentUpdate, CommentResponse, PostCreate, PostUpdate, PostResponse,TagCreate
 import json
 from bson import ObjectId
 from typing import List, Optional
@@ -18,16 +18,26 @@ def create_post(post: PostCreate, current_user: UserSchema = Depends(get_current
     author = Author.objects(id=post.author_id).first()
     if not author:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Author not found")
-    new_post = Post(title=post.title, content=post.content, author=author)
-    new_post.save()
+    try:
+        new_post = Post(title=post.title, content=post.content, author=author)
+        new_post.save()
+        if post.tags:
+            for tags in post.tags:
+                new_post.add_tags(tags.title)
+    except NotUniqueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Title must be unique")
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e)
     return PostResponse(
         id=str(new_post.id),
         title=new_post.title,
         content=new_post.content,
+        tags=[tag.title for tag in new_post.tags],
         created_at=new_post.created_at,
         updated_at=new_post.updated_at,
-        slug_title =new_post.slug_title
+        slug_title=new_post.slug_title
     )
+    
  
 @router.post("/posts/{post_id}/comments/", response_model=CommentResponse)
 def add_comment(post_id: str, comment: CommentCreate, current_user: UserSchema = Depends(get_current_user)):
@@ -46,6 +56,29 @@ def add_comment(post_id: str, comment: CommentCreate, current_user: UserSchema =
         author=new_comment.author.username,
         created_at=new_comment.created_at
     )
+
+@router.post("/posts/{post_id}/tags/add", response_model=None)
+def add_tag(post_id: str, tags: List[TagCreate], current_user: UserSchema = Depends(get_current_user)):
+    post = Post.objects(id=post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    for tag_data in tags:
+        post.add_tags(tag_data.title)
+    return {"message": "added tags successfully"}
+ 
+@router.post("/posts/{post_id}/tags/remove", response_model=None)
+def remove_tags(post_id: str, tags: List[TagCreate], current_user: UserSchema = Depends(get_current_user)):
+    post = Post.objects(id=post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    for tag_data in tags:
+        post.remove_tags(tag_data.title)
+    return {"message": "removed tags successfully"}
+
+@router.get("/tags/", response_model=List[TagCreate])
+def get_all_tags():
+    tags = Tags.objects()
+    return [TagCreate(title=tag.title) for tag in tags]
  
 @router.get("/posts/id/{post_id}", response_model=PostResponse)
 def get_post(post_id: str):
@@ -60,11 +93,13 @@ def get_post(post_id: str):
             created_at=comment.created_at
         ) for comment in post.comments
     ]
+    tags = [tag.title for tag in post.tags]
     return PostResponse(
         id=str(post.id),
         title=post.title,
         content=post.content,
         comments=comments,
+        tags=tags,
         created_at=post.created_at,
         updated_at=post.updated_at,
         slug_title=post.slug_title,
@@ -83,10 +118,12 @@ def get_post_by_slug(slug_title: str):
             created_at=comment.created_at
         ) for comment in post.comments
     ]
+    tags = [tag.title for tag in post.tags]
     return PostResponse(
         id=str(post.id),
         title=post.title,
         content=post.content,
+        tags=tags,
         comments=comments,
         created_at=post.created_at,
         updated_at=post.updated_at,
@@ -106,12 +143,14 @@ def get_all_posts():
                 created_at=comment.created_at
             ) for comment in post.comments
         ]
+        tags = [tag.title for tag in post.tags]
         response.append(
             PostResponse(
                 id=str(post.id),
                 title=post.title,
                 content=post.content,
                 comments=comments,
+                tags=tags,
                 created_at=post.created_at,
                 updated_at=post.updated_at,
                 slug_title=post.slug_title
@@ -140,6 +179,17 @@ def update_post(post_update: PostUpdate, post: Post = Depends(can_update_or_dele
     if post_update.content:
         post.content = post_update.content
     post.save()
+    #first remove all the tags
+    if post.tags:
+        for tag in post.tags:
+            print("remove",tag.title)
+            post.remove_tags(tag.title)
+    #then add the updated new tags
+    if post_update.tags:
+        for tag_data in post_update.tags:
+            print("add",tag_data.title)
+            post.add_tags(tag_data.title)
+    
     comments = [
         CommentResponse(
             id=str(comment.id),
@@ -155,7 +205,8 @@ def update_post(post_update: PostUpdate, post: Post = Depends(can_update_or_dele
         comments=comments,
         created_at=post.created_at,
         updated_at=post.updated_at,
-        slug_title=post.slug_title
+        slug_title=post.slug_title,
+        tags=[tag.title for tag in post.tags]
     )
  
 def can_modify_comment(post_id: str, comment_id: str, current_user: User = Depends(get_current_user)):

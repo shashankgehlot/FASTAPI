@@ -23,7 +23,8 @@ async def register(user: UserCreate):
     user_doc = User(username=user.username, email=user.email, password=hashed_password)
     user_doc.save()
 
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": user_doc.username, "user_id": str(user_doc.id), "is_author": user_doc.is_author,
+                                              "is_admin": user_doc.is_admin, "is_user": user_doc.is_user})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/login", response_model=Token)
@@ -32,7 +33,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     if user_doc is None or not verify_password(form_data.password, user_doc.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    access_token = create_access_token(data={"sub": form_data.username})
+    access_token = create_access_token(data={"sub": user_doc.username,"user_id": str(user_doc.id),
+                                              "is_author": user_doc.is_author, "is_admin": user_doc.is_admin, "is_user": user_doc.is_user})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/users/me",response_model=UserSchema)

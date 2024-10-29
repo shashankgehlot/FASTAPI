@@ -1,2 +1,6 @@
 .env
 .htpasswd
+# Ignore Python cache directories
+__pycache__/
+*.pyc
+**/__pycache__

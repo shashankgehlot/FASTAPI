@@ -48,16 +48,31 @@ class PostCreate(BaseModel):
     content: str
     author_id: str
  
-class PostUpdate(BaseModel):
-    title: Optional[str] = None
-    content: Optional[str] = None
+
+
  
 class PostResponse(BaseModel):
     id: str
     title: str
     content: str
     comments: List[CommentResponse] = []
+    tags: List[str] = []
     created_at: datetime
     updated_at: datetime
     slug_title: str
    
+class TagCreate(BaseModel):
+    title: str
+
+
+class PostCreate(BaseModel):
+    title: str
+    content: str
+    author_id: str
+    tags: Optional[List[TagCreate]] = None
+
+
+class PostUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    tags: Optional[List[TagCreate]] = None
