@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException,Depends,status
+from fastapi import APIRouter, HTTPException,Depends,status,Query
 from mongoengine import DoesNotExist,NotUniqueError
 from post.models import Post, Author,Comment,Tags
 from authenticator.models import User
@@ -133,6 +133,41 @@ def get_post_by_slug(slug_title: str):
 @router.get("/posts/", response_model=List[PostResponse])
 def get_all_posts():
     posts = Post.objects()
+    response = []
+    for post in posts:
+        comments = [
+            CommentResponse(
+                id=str(comment.id),
+                content=comment.content,
+                author=comment.author.username,
+                created_at=comment.created_at
+            ) for comment in post.comments
+        ]
+        tags = [tag.title for tag in post.tags]
+        response.append(
+            PostResponse(
+                id=str(post.id),
+                title=post.title,
+                content=post.content,
+                comments=comments,
+                tags=tags,
+                created_at=post.created_at,
+                updated_at=post.updated_at,
+                slug_title=post.slug_title
+            )
+        )
+    return response
+
+@router.get("/tagged-posts/", response_model=List[PostResponse])
+def get_tagged_posts(tags: Optional[List[str]] = Query(None)):
+    print(tags)
+    if tags:
+        tag_objects = Tags.objects(title__in=tags)
+        tag_ids = [tag.id for tag in tag_objects]
+        # Filtering posts by tag IDs
+        posts = Post.objects(tags__in=tag_ids)
+    else:
+        posts = Post.objects()
     response = []
     for post in posts:
         comments = [

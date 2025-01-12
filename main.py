@@ -9,6 +9,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from authenticator.auth import router as auth_router
 from post.routes.post import router as post_router
 from post.routes.author import router as author_router
+from tracker.routes.tracker import router as tracking_router
 from celery_app import my_task
 import uvicorn
 import os
@@ -32,7 +33,8 @@ connect(host=url)
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(author_router, prefix="/author", tags=["author"])
 app.include_router(post_router, prefix="/blog", tags=["post"])
- 
+app.include_router(tracking_router, prefix="/track", tags=["tracker"])
+
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
     if credentials.username == USERNAME and credentials.password == PASSWORD:
         return True
