@@ -60,7 +60,10 @@ class PostResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     slug_title: str
-   
+    thumbnail_base64: Optional[str] = None
+    post_image_base64: Optional[str] = None
+
+
 class TagCreate(BaseModel):
     title: str
 
@@ -70,6 +73,8 @@ class PostCreate(BaseModel):
     content: str
     author_id: str
     tags: Optional[List[TagCreate]] = None
+    thumbnail_base64: Optional[str] = None
+    post_image_base64: Optional[str] = None
 
 
 class PostUpdate(BaseModel):

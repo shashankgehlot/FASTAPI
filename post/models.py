@@ -1,7 +1,8 @@
-from mongoengine import Document, EmbeddedDocument, StringField, ReferenceField, ListField, DateTimeField, EmbeddedDocumentField,UUIDField
+from mongoengine import Document, EmbeddedDocument, StringField, ReferenceField, ListField, DateTimeField, EmbeddedDocumentField,UUIDField,ImageField
 from authenticator.models import User
 from datetime import datetime
 from slugify import slugify
+
 import uuid
  
  
@@ -33,6 +34,10 @@ class Post(Document):
     created_at = DateTimeField(default=datetime.utcnow)
     updated_at = DateTimeField(default=datetime.utcnow)
     slug_title = StringField(unique=False)
+    thumbnail_base64 = StringField(required=False)
+    post_image_base64 = StringField(required=False)
+
+    
 
     meta = {'collection': 'Post'}
 
@@ -101,3 +106,13 @@ class Post(Document):
                 self.save()  # Save the post with the updated tag
         except Tags.DoesNotExist:
             pass  # Tag with old_title does not exist
+
+    def set_thumbnail(self, thumbnail_base64):
+        """Method to set the thumbnail image in base64 format."""
+        self.thumbnail_base64 = thumbnail_base64
+        self.save()  # Save the post with the new thumbnail
+
+    def set_post_image(self, post_image_base64):
+        """Method to set the post image in base64 format."""
+        self.post_image_base64 = post_image_base64
+        self.save()  # Save the post with the new image
